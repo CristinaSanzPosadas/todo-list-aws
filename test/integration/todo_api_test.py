@@ -75,7 +75,7 @@ class TestApi(unittest.TestCase):
             response.status_code, 200, "Error en la petición API a {url}"
         )
         print('End - integration test Add TODO')
-     @pytest.mark.read_only
+    @pytest.mark.read_only
     def test_api_gettodo(self):
         print('---------------------------------------')
         print('Starting - integration test Get TODO')
