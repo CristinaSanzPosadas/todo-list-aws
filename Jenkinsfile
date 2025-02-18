@@ -45,7 +45,7 @@ pipeline {
                         if (fileExists('bandit.out')) {
                             echo "El archivo bandit.out existe"
                             recordIssues tools: [
-                                generic(name: 'Bandit', pattern: 'bandit.out')
+                                pyLint(name: 'Bandit', pattern: 'bandit.out')
                             ]
                         } else {
                             echo "No se encontró bandit.out"
