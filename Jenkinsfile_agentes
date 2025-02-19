@@ -2,6 +2,7 @@ pipeline {
     agent any
     stages {
         stage('Get Code') {
+            agent { label 'principal' }
             steps {
                 checkout scm: [
                     $class: 'GitSCM',
@@ -15,23 +16,26 @@ pipeline {
         }
 
         stage('Deploy') {
+            agent { label 'principal' }
             steps {
                 echo 'Construyendo...'
                 sh "sam build"
 
                 echo 'Validando...'
                 sh "sam validate --region us-east-1"
-
+         
                 echo 'Desplegando...'
                 sh "sam deploy --config-env production --no-confirm-changeset --no-fail-on-empty-changeset"
             }
         }
 
         stage('Rest Test') {
+            agent { label 'agent-rest' } 
             steps {
                 withCredentials([string(credentialsId: 'base-url-production', variable: 'BASE_URL')]) {
                     echo "Ejecutando pruebas de integración"
                     sh """
+                    python -m pip install pytest
                     export BASE_URL=${BASE_URL}
                     python -m pytest -m read_only --junitxml=integration-tests-readonly.xml test/integration
                     """
@@ -41,13 +45,30 @@ pipeline {
         }
 
         stage('Cleanup') {
-            steps {
-                catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-                    sh 'pkill -f python || echo "No Flask process running"'
+            parallel {
+                stage('Cleanup principal') {
+                    agent { label 'principal' }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
+                            sh 'pkill -f python || echo "No Flask process running"'
+                        }
+                        script {
+                            echo "Limpiando workspace..."
+                            cleanWs()
+                        }
+                    }
                 }
-                script {
-                    echo "Limpiando workspace..."
-                    cleanWs()
+                stage('Cleanup agent-rest') {
+                    agent { label 'agent-rest' }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
+                            sh 'pkill -f python || echo "No Flask process running"'
+                        }
+                        script {
+                            echo "Limpiando workspace..."
+                            cleanWs()
+                        }
+                    }
                 }
             }
         }
