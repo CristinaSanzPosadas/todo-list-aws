@@ -1,12 +1,12 @@
 version = 0.2
 
-[production]
-[production.deploy]
-[production.deploy.parameters]
-stack_name = "todo-list-aws-production"
+[staging]
+[staging.deploy]
+[staging.deploy.parameters]
+stack_name = "todo-list-aws-staging"
 s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-lskghiifpgob"
 s3_prefix = "todo-list-aws"
 region = "us-east-1"
 capabilities = "CAPABILITY_IAM"
-parameter_overrides = "Stage=\"production\""
+parameter_overrides = "Stage=\"staging\""
 image_repositories = []
