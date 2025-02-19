@@ -2,6 +2,7 @@ pipeline {
     agent any
     stages {
         stage('Get Code') {
+            agent { label 'principal' }
             steps {
                 checkout scm: [
                     $class: 'GitSCM',
@@ -11,11 +12,14 @@ pipeline {
                         credentialsId: 'git-token'
                     ]]
                 ]
+                stash includes: '**', name: 'code'
             }
         }
 
         stage('Static Test') {
+            agent { label 'agent-static' }
             steps {
+                unstash 'code'
                 catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
                     sh script: """
                         python -m pip install flake8 bandit --user
@@ -53,23 +57,26 @@ pipeline {
         }
 
         stage('Deploy') {
+            agent { label 'principal' }
             steps {
                 echo 'Construyendo...'
                 sh "sam build"
 
                 echo 'Validando...'
                 sh "sam validate --region us-east-1"
-
+         
                 echo 'Desplegando...'
                 sh "sam deploy --config-env staging --no-confirm-changeset --no-fail-on-empty-changeset"
             }
         }
 
         stage('Rest Test') {
+            agent { label 'agent-rest' } 
             steps {
                 withCredentials([string(credentialsId: 'base-url-staging', variable: 'BASE_URL')]) {
                     echo "Ejecutando pruebas de integración"
                     sh """
+                    python -m pip install pytest
                     export BASE_URL=${BASE_URL}
                     python -m pytest --junitxml=integration-tests.xml test/integration
                     """
@@ -79,6 +86,7 @@ pipeline {
         }
 
         stage('Promote') {
+            agent { label 'principal' }
             steps {
                 withCredentials([
                     string(credentialsId: 'git-email', variable: 'GIT_EMAIL'),
@@ -110,6 +118,7 @@ pipeline {
         }
 
         stage('Cleanup') {
+            agent { label 'principal' }
             steps {
                 catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
                     sh 'pkill -f python || echo "No Flask process running"'
