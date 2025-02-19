@@ -118,14 +118,42 @@ pipeline {
         }
 
         stage('Cleanup') {
-            agent { label 'principal' }
-            steps {
-                catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
-                    sh 'pkill -f python || echo "No Flask process running"'
+            parallel {
+                stage('Cleanup principal') {
+                    agent { label 'principal' }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
+                            sh 'pkill -f python || echo "No Flask process running"'
+                        }
+                        script {
+                            echo "Limpiando workspace..."
+                            cleanWs()
+                        }
+                    }
                 }
-                script {
-                    echo "Limpiando workspace..."
-                    cleanWs()
+                stage('Cleanup agent-static') {
+                    agent { label 'agent-static' }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
+                            sh 'pkill -f python || echo "No Flask process running"'
+                        }
+                        script {
+                            echo "Limpiando workspace..."
+                            cleanWs()
+                        }
+                    }
+                }
+                stage('Cleanup agent-rest') {
+                    agent { label 'agent-rest' }
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {
+                            sh 'pkill -f python || echo "No Flask process running"'
+                        }
+                        script {
+                            echo "Limpiando workspace..."
+                            cleanWs()
+                        }
+                    }
                 }
             }
         }
