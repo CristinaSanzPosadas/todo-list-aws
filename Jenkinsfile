@@ -98,7 +98,7 @@ pipeline {
                         git config --global user.email "${GIT_EMAIL}"
                         git config --global user.name "${GIT_NAME}"
 
-                        git fetch origin/master
+                        git fetch origin master
                         git checkout master
                         git pull origin master
                         git merge origin/develop --no-ff -m "Merge develop into master"
