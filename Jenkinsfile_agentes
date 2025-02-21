@@ -39,7 +39,9 @@ pipeline {
                     export BASE_URL=${BASE_URL}
                     python -m pytest -m read_only --junitxml=integration-tests-readonly.xml test/integration
                     """
+
                     junit '**/integration-tests-readonly.xml'
+
                 }
             }
         }
